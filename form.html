@@ -87,7 +87,7 @@ input.add {
 }
 
 input.total {
-  width: 38px; /* ~1 см */
+  width: 38px;
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -150,7 +150,7 @@ document.getElementById("title").textContent =
    DATA
 ================================ */
 let allItems = [];
-const values = {}; // итоговые значения
+const values = {};
 
 /* ===============================
    DRAFT SAVE / LOAD
@@ -164,10 +164,9 @@ function loadDraft() {
   if (!saved) return;
 
   try {
-    const data = JSON.parse(saved);
-    Object.assign(values, data);
+    Object.assign(values, JSON.parse(saved));
   } catch (e) {
-    console.warn("Draft corrupted, ignored");
+    console.warn("Draft corrupted");
   }
 }
 
@@ -178,7 +177,7 @@ fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(data => {
     allItems = data;
-    loadDraft();          // 🔥 восстанавливаем черновик
+    loadDraft();
     render(allItems);
   });
 
@@ -209,7 +208,7 @@ function render(items) {
     total.addEventListener("input", () => {
       if (total.value === "") delete values[it.name];
       else values[it.name] = parseFloat(total.value);
-      saveDraft(); // 🔥 автосохранение
+      saveDraft();
     });
 
     plus.addEventListener("click", () => {
@@ -223,7 +222,7 @@ function render(items) {
       values[it.name] = res;
       add.value = "";
 
-      saveDraft(); // 🔥 автосохранение
+      saveDraft();
     });
 
     root.appendChild(div);
@@ -239,7 +238,7 @@ function filterItems(text) {
 }
 
 /* ===============================
-   SAVE WITH CONFIRM
+   SAVE + CLEANUP
 ================================ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
@@ -269,8 +268,11 @@ tg.onEvent("mainButtonClicked", () => {
       items
     }));
 
-    // ⚠️ НЕ удаляем черновик сразу — на случай сбоя
-    setTimeout(() => tg.close(), 600);
+    /* 🔥 КЛЮЧЕВОЙ МОМЕНТ */
+    setTimeout(() => {
+      localStorage.removeItem(STORAGE_KEY); // ✅ очищаем черновик
+      tg.close();                            // закрываем mini app
+    }, 800);
   });
 });
 </script>
