@@ -87,7 +87,7 @@ input.add {
 }
 
 input.total {
-  width: 38px; /* ~1 см */
+  width: 38px;
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -133,7 +133,6 @@ const params = new URLSearchParams(location.search);
 const section = params.get("section") || "default";
 
 const STORAGE_KEY = `inventory_draft_${section}`;
-const SAVED_KEY   = `inventory_saved_${section}`;
 
 /* ===============================
    TITLE
@@ -151,7 +150,7 @@ document.getElementById("title").textContent =
    DATA
 ================================ */
 let allItems = [];
-const values = {};
+let values = {}; // ⚠️ let, чтобы можно было полностью очистить
 
 /* ===============================
    DRAFT SAVE / LOAD
@@ -161,20 +160,13 @@ function saveDraft() {
 }
 
 function loadDraft() {
-  // 🔥 если прошлый сеанс был успешно сохранён — начинаем с чистого листа
-  if (localStorage.getItem(SAVED_KEY) === "true") {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(SAVED_KEY);
-    return;
-  }
-
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return;
 
   try {
-    Object.assign(values, JSON.parse(saved));
-  } catch (e) {
-    console.warn("Draft corrupted");
+    values = JSON.parse(saved) || {};
+  } catch {
+    values = {};
   }
 }
 
@@ -185,7 +177,7 @@ fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(data => {
     allItems = data;
-    loadDraft();   // 👈 восстановление или очистка
+    loadDraft();
     render(allItems);
   });
 
@@ -229,7 +221,6 @@ function render(items) {
       total.value = res;
       values[it.name] = res;
       add.value = "";
-
       saveDraft();
     });
 
@@ -246,7 +237,7 @@ function filterItems(text) {
 }
 
 /* ===============================
-   SAVE + FLAG
+   SAVE (FINAL & SAFE)
 ================================ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
@@ -270,16 +261,17 @@ tg.onEvent("mainButtonClicked", () => {
     tg.MainButton.setText("Сохраняю…");
     tg.MainButton.disable();
 
-    // 🔐 помечаем черновик как успешно сохранённый
-    localStorage.setItem(SAVED_KEY, "true");
-
     tg.sendData(JSON.stringify({
       section,
       filename,
       items
     }));
 
-    // закрываем сразу — очистка будет при следующем входе
+    /* 🔥 ФИНАЛЬНАЯ ЗАЩИТА */
+    localStorage.removeItem(STORAGE_KEY); // чистим черновик
+    values = {};                          // чистим память
+    render(allItems);                     // чистим UI
+
     tg.close();
   });
 });
