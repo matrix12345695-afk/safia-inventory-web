@@ -50,7 +50,7 @@
 
     .item {
       background: #1c1c1c;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 10px;
       margin-bottom: 8px;
       display: flex;
@@ -69,8 +69,8 @@
     }
 
     .btn-plus {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border-radius: 8px;
       border: none;
       font-size: 20px;
@@ -84,22 +84,24 @@
       background: #3a3a3a;
     }
 
-    input.add,
-    input.total {
-      flex: 1;
-      padding: 8px;
+    input.add {
+      width: 70px;
+      padding: 6px;
       border-radius: 6px;
       border: none;
       text-align: center;
-      font-size: 14px;
-    }
-
-    input.add {
+      font-size: 13px;
       background: #2a2a2a;
       color: #fff;
     }
 
     input.total {
+      flex: 1;
+      padding: 6px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+      font-size: 14px;
       background: #fff;
       color: #000;
       font-weight: 600;
@@ -142,7 +144,7 @@ document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
 let allItems = [];
-const values = {}; // 🧠 итоговые значения
+const values = {}; // итоговые значения
 
 fetch(`./data/${section}.json`)
   .then(r => r.json())
@@ -165,7 +167,7 @@ function render(items) {
       <div class="name">${it.name}</div>
       <div class="row">
         <button class="btn-plus">+</button>
-        <input class="add" type="number" placeholder="добавить">
+        <input class="add" type="number" placeholder="+">
         <input class="total" type="number" placeholder="итог" value="${totalVal}">
       </div>
     `;
@@ -192,7 +194,7 @@ function render(items) {
       total.value = result;
       values[it.name] = result;
 
-      add.value = ""; // 🔥 очищаем добавочное поле
+      add.value = "";
     });
 
     root.appendChild(div);
