@@ -72,11 +72,10 @@ h1 {
   font-weight: bold;
   background: #2e2e2e;
   color: #fff;
-  flex-shrink: 0;
 }
 
 input.add {
-  width: 40px;        /* сумма */
+  width: 40px;
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -88,7 +87,7 @@ input.add {
 }
 
 input.total {
-  width: 38px;        /* ≈ 1 см */
+  width: 38px; /* ~1 см */
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -193,6 +192,7 @@ function filterItems(text) {
   render(allItems.filter(i => i.name.toLowerCase().includes(q)));
 }
 
+/* 👇 ПОДТВЕРЖДЕНИЕ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) {
@@ -209,16 +209,27 @@ tg.onEvent("mainButtonClicked", () => {
     return;
   }
 
-  tg.MainButton.setText("Сохраняю…");
-  tg.MainButton.disable();
+  tg.showPopup({
+    title: "Подтверждение",
+    message: "Вы уверены, что хотите сохранить инвентаризацию?",
+    buttons: [
+      { id: "no", type: "cancel", text: "Нет" },
+      { id: "yes", type: "default", text: "Да" }
+    ]
+  }, buttonId => {
+    if (buttonId !== "yes") return;
 
-  tg.sendData(JSON.stringify({
-    section,
-    filename,
-    items
-  }));
+    tg.MainButton.setText("Сохраняю…");
+    tg.MainButton.disable();
 
-  setTimeout(() => tg.close(), 600);
+    tg.sendData(JSON.stringify({
+      section,
+      filename,
+      items
+    }));
+
+    setTimeout(() => tg.close(), 600);
+  });
 });
 </script>
 
