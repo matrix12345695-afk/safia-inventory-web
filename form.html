@@ -54,22 +54,38 @@
       padding: 10px;
       margin-bottom: 8px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 8px;
     }
 
     .name {
       flex: 1;
-      margin-right: 8px;
       font-size: 14px;
     }
 
+    .btn-plus {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: none;
+      font-size: 20px;
+      font-weight: bold;
+      background: #2e2e2e;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .btn-plus:active {
+      background: #3a3a3a;
+    }
+
     input.qty {
-      width: 90px;
+      width: 80px;
       padding: 6px;
       border-radius: 6px;
       border: none;
       text-align: center;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -109,7 +125,8 @@ document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
 let allItems = [];
-const values = {}; // 🧠 ХРАНИЛИЩЕ ЗНАЧЕНИЙ
+const values = {};
+const STEP = 1; // 👈 шаг кнопки +
 
 fetch(`./data/${section}.json`)
   .then(r => r.json())
@@ -130,17 +147,26 @@ function render(items) {
 
     div.innerHTML = `
       <div class="name">${it.name}</div>
-      <input class="qty" type="number" step="0.001"
-             value="${val}">
+      <button class="btn-plus">+</button>
+      <input class="qty" type="number" step="0.001" value="${val}">
     `;
 
     const input = div.querySelector("input");
+    const plus = div.querySelector(".btn-plus");
+
     input.addEventListener("input", () => {
       if (input.value === "") {
         delete values[it.name];
       } else {
         values[it.name] = parseFloat(input.value);
       }
+    });
+
+    plus.addEventListener("click", () => {
+      let v = parseFloat(input.value) || 0;
+      v += STEP;
+      input.value = v;
+      values[it.name] = v;
     });
 
     root.appendChild(div);
@@ -174,7 +200,6 @@ tg.onEvent("mainButtonClicked", () => {
     items
   }));
 
-  // ✅ ЗАКРЫВАЕМ ПОСЛЕ ОТПРАВКИ
   setTimeout(() => tg.close(), 700);
 });
 </script>
