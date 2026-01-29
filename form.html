@@ -23,22 +23,22 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
-      padding: 16px;
+      padding: 12px;
     }
 
     h1 {
-      font-size: 20px;
-      margin-bottom: 10px;
+      font-size: 18px;
+      margin-bottom: 8px;
       flex-shrink: 0;
     }
 
     .input {
       width: 100%;
-      padding: 10px;
-      border-radius: 10px;
+      padding: 8px;
+      border-radius: 8px;
       border: none;
-      margin-bottom: 8px;
-      font-size: 14px;
+      margin-bottom: 6px;
+      font-size: 13px;
       flex-shrink: 0;
     }
 
@@ -50,58 +50,52 @@
 
     .item {
       background: #1c1c1c;
-      border-radius: 12px;
-      padding: 10px;
-      margin-bottom: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .name {
-      font-size: 14px;
-    }
-
-    .row {
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
+    .name {
+      flex: 1;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .btn-plus {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
       border: none;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
       background: #2e2e2e;
       color: #fff;
       flex-shrink: 0;
     }
 
-    .btn-plus:active {
-      background: #3a3a3a;
-    }
-
     input.add {
-      width: 70px;
-      padding: 6px;
+      width: 50px;              /* 👈 меньше */
+      padding: 4px;
       border-radius: 6px;
       border: none;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       background: #2a2a2a;
       color: #fff;
     }
 
     input.total {
-      flex: 1;
-      padding: 6px;
+      width: 80px;              /* 👈 в 2 раза меньше прежнего */
+      padding: 4px;
       border-radius: 6px;
       border: none;
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       background: #fff;
       color: #000;
       font-weight: 600;
@@ -144,7 +138,7 @@ document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
 let allItems = [];
-const values = {}; // итоговые значения
+const values = {};
 
 fetch(`./data/${section}.json`)
   .then(r => r.json())
@@ -165,11 +159,9 @@ function render(items) {
 
     div.innerHTML = `
       <div class="name">${it.name}</div>
-      <div class="row">
-        <button class="btn-plus">+</button>
-        <input class="add" type="number" placeholder="+">
-        <input class="total" type="number" placeholder="итог" value="${totalVal}">
-      </div>
+      <button class="btn-plus">+</button>
+      <input class="add" type="number" placeholder="+">
+      <input class="total" type="number" placeholder="итог" value="${totalVal}">
     `;
 
     const add = div.querySelector(".add");
@@ -193,7 +185,6 @@ function render(items) {
 
       total.value = result;
       values[it.name] = result;
-
       add.value = "";
     });
 
