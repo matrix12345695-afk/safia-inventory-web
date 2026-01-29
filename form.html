@@ -1,106 +1,105 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Инвентаризация</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<meta charset="UTF-8">
+<title>Инвентаризация</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <style>
-    * { box-sizing: border-box; }
+<style>
+* { box-sizing: border-box; }
 
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      background: #0f0f0f;
-      color: #fff;
-      font-family: system-ui;
-    }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0f0f0f;
+  color: #fff;
+  font-family: system-ui;
+}
 
-    .app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      padding: 12px;
-    }
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 10px;
+}
 
-    h1 {
-      font-size: 18px;
-      margin-bottom: 8px;
-      flex-shrink: 0;
-    }
+h1 {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
 
-    .input {
-      width: 100%;
-      padding: 8px;
-      border-radius: 8px;
-      border: none;
-      margin-bottom: 6px;
-      font-size: 13px;
-      flex-shrink: 0;
-    }
+.input {
+  width: 100%;
+  padding: 7px;
+  border-radius: 7px;
+  border: none;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
 
-    .list {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
+.list {
+  flex: 1;
+  overflow-y: auto;
+}
 
-    .item {
-      background: #1c1c1c;
-      border-radius: 10px;
-      padding: 8px;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+.item {
+  background: #1c1c1c;
+  border-radius: 8px;
+  padding: 6px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-    .name {
-      flex: 1;
-      font-size: 13px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+.name {
+  flex: 1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-    .btn-plus {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      border: none;
-      font-size: 18px;
-      font-weight: bold;
-      background: #2e2e2e;
-      color: #fff;
-      flex-shrink: 0;
-    }
+.btn-plus {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  background: #2e2e2e;
+  color: #fff;
+  flex-shrink: 0;
+}
 
-    input.add {
-      width: 50px;              /* 👈 меньше */
-      padding: 4px;
-      border-radius: 6px;
-      border: none;
-      text-align: center;
-      font-size: 12px;
-      background: #2a2a2a;
-      color: #fff;
-    }
+input.add {
+  width: 40px;        /* сумма */
+  height: 24px;
+  padding: 2px;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  font-size: 12px;
+  background: #2a2a2a;
+  color: #fff;
+}
 
-    input.total {
-      width: 80px;              /* 👈 в 2 раза меньше прежнего */
-      padding: 4px;
-      border-radius: 6px;
-      border: none;
-      text-align: center;
-      font-size: 13px;
-      background: #fff;
-      color: #000;
-      font-weight: 600;
-    }
-  </style>
+input.total {
+  width: 38px;        /* ≈ 1 см */
+  height: 24px;
+  padding: 2px;
+  border-radius: 5px;
+  border: none;
+  text-align: center;
+  font-size: 12px;
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+}
+</style>
 </head>
 
 <body>
@@ -108,16 +107,16 @@
 <div class="app">
   <h1 id="title">Инвентаризация</h1>
 
-  <input id="filename" class="input" placeholder="📝 Имя файла">
+  <input id="filename" class="input" placeholder="Имя файла">
 
-  <input class="input" placeholder="🔍 Поиск по наименованию"
+  <input class="input" placeholder="Поиск"
          oninput="filterItems(this.value)">
 
   <div id="list" class="list"></div>
 </div>
 
 <script>
-const tg = window.Telegram.WebApp;
+const tg = Telegram.WebApp;
 tg.ready();
 tg.expand();
 tg.disableVerticalSwipes();
@@ -129,10 +128,10 @@ const params = new URLSearchParams(location.search);
 const section = params.get("section");
 
 const titles = {
-  kitchen: "🧑‍🍳 Кухня",
-  bar: "🍹 Бар",
-  shop: "🏪 Магазин",
-  freezer: "❄️ Морозилка"
+  kitchen: "Кухня",
+  bar: "Бар",
+  shop: "Магазин",
+  freezer: "Морозилка"
 };
 document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
@@ -160,8 +159,8 @@ function render(items) {
     div.innerHTML = `
       <div class="name">${it.name}</div>
       <button class="btn-plus">+</button>
-      <input class="add" type="number" placeholder="+">
-      <input class="total" type="number" placeholder="итог" value="${totalVal}">
+      <input class="add" type="number">
+      <input class="total" type="number" value="${totalVal}">
     `;
 
     const add = div.querySelector(".add");
@@ -169,22 +168,19 @@ function render(items) {
     const plus = div.querySelector(".btn-plus");
 
     total.addEventListener("input", () => {
-      if (total.value === "") {
-        delete values[it.name];
-      } else {
-        values[it.name] = parseFloat(total.value);
-      }
+      if (total.value === "") delete values[it.name];
+      else values[it.name] = parseFloat(total.value);
     });
 
     plus.addEventListener("click", () => {
-      const addVal = parseFloat(add.value);
-      if (isNaN(addVal)) return;
+      const a = parseFloat(add.value);
+      if (isNaN(a)) return;
 
-      const current = parseFloat(total.value) || 0;
-      const result = current + addVal;
+      const cur = parseFloat(total.value) || 0;
+      const res = cur + a;
 
-      total.value = result;
-      values[it.name] = result;
+      total.value = res;
+      values[it.name] = res;
       add.value = "";
     });
 
@@ -204,13 +200,16 @@ tg.onEvent("mainButtonClicked", () => {
     return;
   }
 
-  const items = Object.entries(values).map(([name, qty]) => ({ name, qty }));
+  const items = Object.entries(values).map(
+    ([name, qty]) => ({ name, qty })
+  );
+
   if (!items.length) {
-    tg.showAlert("Нет введённых значений");
+    tg.showAlert("Нет данных");
     return;
   }
 
-  tg.MainButton.setText("⏳ Сохраняю...");
+  tg.MainButton.setText("Сохраняю…");
   tg.MainButton.disable();
 
   tg.sendData(JSON.stringify({
@@ -219,7 +218,7 @@ tg.onEvent("mainButtonClicked", () => {
     items
   }));
 
-  setTimeout(() => tg.close(), 700);
+  setTimeout(() => tg.close(), 600);
 });
 </script>
 
