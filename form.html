@@ -37,7 +37,7 @@
       padding: 10px;
       border-radius: 10px;
       border: none;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-size: 14px;
       flex-shrink: 0;
     }
@@ -97,6 +97,9 @@
 
   <input id="filename" class="input" placeholder="📝 Имя файла">
 
+  <!-- 🔥 ГЛОБАЛЬНОЕ ПОЛЕ ДОБАВЛЕНИЯ -->
+  <input id="addValue" class="input" type="number" placeholder="➕ Добавить (например: 44)">
+
   <input class="input" placeholder="🔍 Поиск по наименованию"
          oninput="filterItems(this.value)">
 
@@ -126,7 +129,6 @@ document.getElementById("title").textContent =
 
 let allItems = [];
 const values = {};
-const STEP = 1; // 👈 шаг кнопки +
 
 fetch(`./data/${section}.json`)
   .then(r => r.json())
@@ -163,8 +165,17 @@ function render(items) {
     });
 
     plus.addEventListener("click", () => {
+      const addField = document.getElementById("addValue");
+      const add = parseFloat(addField.value);
+
+      if (isNaN(add)) {
+        tg.showAlert("Введите число в поле «Добавить»");
+        return;
+      }
+
       let v = parseFloat(input.value) || 0;
-      v += STEP;
+      v += add;
+
       input.value = v;
       values[it.name] = v;
     });
