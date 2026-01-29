@@ -73,16 +73,13 @@
 <script>
 const tg = window.Telegram.WebApp;
 
-/* === ИНИЦИАЛИЗАЦИЯ === */
 tg.ready();
 tg.expand();
 
-/* === MAIN BUTTON === */
 tg.MainButton.setText("💾 Сохранить");
 tg.MainButton.enable();
 tg.MainButton.show();
 
-/* === ПАРАМЕТРЫ === */
 const params = new URLSearchParams(window.location.search);
 const section = params.get("section");
 
@@ -98,7 +95,6 @@ document.getElementById("title").textContent =
 
 let allItems = [];
 
-/* === ЗАГРУЗКА ТОВАРОВ === */
 fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(items => {
@@ -107,7 +103,6 @@ fetch(`./data/${section}.json`)
   })
   .catch(() => tg.showAlert("Ошибка загрузки списка"));
 
-/* === ОТРИСОВКА === */
 function render(items) {
   const root = document.getElementById("list");
   root.innerHTML = "";
@@ -123,13 +118,12 @@ function render(items) {
   });
 }
 
-/* === ПОИСК === */
 function filterItems(text) {
   const q = text.toLowerCase();
   render(allItems.filter(it => it.name.toLowerCase().includes(q)));
 }
 
-/* === 💥 САМОЕ ВАЖНОЕ: НИЗКОУРОВНЕВОЕ СОБЫТИЕ === */
+/* ✅ ВАЖНО: БЕЗ tg.close() */
 tg.onEvent("mainButtonClicked", () => {
 
   const filename = document.getElementById("filename").value.trim();
@@ -151,14 +145,14 @@ tg.onEvent("mainButtonClicked", () => {
     return;
   }
 
+  tg.MainButton.setText("⏳ Сохраняю...");
+  tg.MainButton.disable();
+
   tg.sendData(JSON.stringify({
     section: section,
     filename: filename,
     items: result
   }));
-
-  // ⚠️ ВАЖНО: закрываем WebApp
-  tg.close();
 });
 </script>
 
