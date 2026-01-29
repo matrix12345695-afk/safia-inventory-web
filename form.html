@@ -87,7 +87,7 @@ input.add {
 }
 
 input.total {
-  width: 38px;
+  width: 38px; /* ~1 см */
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -133,6 +133,7 @@ const params = new URLSearchParams(location.search);
 const section = params.get("section") || "default";
 
 const STORAGE_KEY = `inventory_draft_${section}`;
+const SAVED_KEY   = `inventory_saved_${section}`;
 
 /* ===============================
    TITLE
@@ -160,6 +161,13 @@ function saveDraft() {
 }
 
 function loadDraft() {
+  // 🔥 если прошлый сеанс был успешно сохранён — начинаем с чистого листа
+  if (localStorage.getItem(SAVED_KEY) === "true") {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SAVED_KEY);
+    return;
+  }
+
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return;
 
@@ -177,7 +185,7 @@ fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(data => {
     allItems = data;
-    loadDraft();
+    loadDraft();   // 👈 восстановление или очистка
     render(allItems);
   });
 
@@ -238,7 +246,7 @@ function filterItems(text) {
 }
 
 /* ===============================
-   SAVE + CLEANUP
+   SAVE + FLAG
 ================================ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
@@ -262,17 +270,17 @@ tg.onEvent("mainButtonClicked", () => {
     tg.MainButton.setText("Сохраняю…");
     tg.MainButton.disable();
 
+    // 🔐 помечаем черновик как успешно сохранённый
+    localStorage.setItem(SAVED_KEY, "true");
+
     tg.sendData(JSON.stringify({
       section,
       filename,
       items
     }));
 
-    /* 🔥 КЛЮЧЕВОЙ МОМЕНТ */
-    setTimeout(() => {
-      localStorage.removeItem(STORAGE_KEY); // ✅ очищаем черновик
-      tg.close();                            // закрываем mini app
-    }, 800);
+    // закрываем сразу — очистка будет при следующем входе
+    tg.close();
   });
 });
 </script>
