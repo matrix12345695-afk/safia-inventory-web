@@ -8,56 +8,133 @@
 
 <style>
 * { box-sizing: border-box; }
+
 html, body {
-  margin: 0; padding: 0; height: 100%;
-  background: #0f0f0f; color: #fff;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #0f0f0f;
+  color: #fff;
   font-family: system-ui;
 }
+
 .app {
-  display: flex; flex-direction: column;
-  height: 100vh; padding: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 10px;
 }
-h1 { font-size: 17px; margin-bottom: 6px; }
+
+h1 {
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
 .input {
-  width: 100%; padding: 7px;
-  border-radius: 7px; border: none;
-  margin-bottom: 6px; font-size: 12px;
+  width: 100%;
+  padding: 7px;
+  border-radius: 7px;
+  border: none;
+  margin-bottom: 6px;
+  font-size: 12px;
 }
-.list { flex: 1; overflow-y: auto; }
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+}
+
 .item {
   background: #1c1c1c;
   border-radius: 8px;
-  padding: 6px; margin-bottom: 5px;
-  display: flex; align-items: center; gap: 4px;
+  padding: 6px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
+
 .name {
-  flex: 1; font-size: 12px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 .btn-plus {
-  width: 24px; height: 24px;
-  border-radius: 5px; border: none;
-  font-size: 16px; font-weight: bold;
-  background: #2e2e2e; color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  background: #2e2e2e;
+  color: #fff;
 }
+
 input.add {
-  width: 40px; height: 24px;
-  text-align: center; font-size: 12px;
+  width: 40px;
+  height: 24px;
+  text-align: center;
+  font-size: 12px;
 }
+
 input.total {
-  width: 38px; height: 24px;
-  text-align: center; font-size: 12px;
-  background: #fff; color: #000; font-weight: 600;
+  width: 38px;
+  height: 24px;
+  text-align: center;
+  font-size: 12px;
+  background: #fff;
+  color: #000;
+  font-weight: 600;
+}
+
+/* 🔽 КНОПКИ ВНИЗУ */
+.footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.footer button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.save-btn {
+  background: #2ea043;
+  color: #fff;
+}
+
+.clear-btn {
+  background: #a02e2e;
+  color: #fff;
 }
 </style>
 </head>
 
 <body>
+
 <div class="app">
   <h1 id="title">Инвентаризация</h1>
+
   <input id="filename" class="input" placeholder="Имя файла">
-  <input class="input" placeholder="Поиск" oninput="filterItems(this.value)">
+
+  <input class="input" placeholder="Поиск"
+         oninput="filterItems(this.value)">
+
   <div id="list" class="list"></div>
+
+  <!-- 🔽 НИЖНИЕ КНОПКИ -->
+  <div class="footer">
+    <button class="save-btn" onclick="saveInventory()">💾 Сохранить</button>
+    <button class="clear-btn" onclick="clearAll()">🗑 Очистить всё</button>
+  </div>
 </div>
 
 <script>
@@ -66,20 +143,10 @@ tg.ready();
 tg.expand();
 tg.disableVerticalSwipes();
 
-tg.MainButton.setText("💾 Сохранить");
-tg.MainButton.show();
-
 const params = new URLSearchParams(location.search);
 const section = params.get("section") || "default";
 
-/* 🔐 SESSION ID — КЛЮЧ ВСЕГО */
-let sessionId = sessionStorage.getItem("inventory_session");
-if (!sessionId) {
-  sessionId = crypto.randomUUID();
-  sessionStorage.setItem("inventory_session", sessionId);
-}
-
-const STORAGE_KEY = `inventory_${section}_${sessionId}`;
+const STORAGE_KEY = `inventory_draft_${section}`;
 
 const titles = {
   kitchen: "Кухня",
@@ -115,9 +182,10 @@ fetch(`./data/${section}.json`)
 function render(items) {
   const root = document.getElementById("list");
   root.innerHTML = "";
+
   items.forEach(it => {
-    const div = document.createElement("div");
     const val = values[it.name] ?? "";
+    const div = document.createElement("div");
     div.className = "item";
     div.innerHTML = `
       <div class="name">${it.name}</div>
@@ -125,8 +193,10 @@ function render(items) {
       <input class="add" type="number">
       <input class="total" type="number" value="${val}">
     `;
+
     const add = div.querySelector(".add");
     const total = div.querySelector(".total");
+
     div.querySelector(".btn-plus").onclick = () => {
       const a = parseFloat(add.value);
       if (isNaN(a)) return;
@@ -136,11 +206,13 @@ function render(items) {
       add.value = "";
       saveDraft();
     };
+
     total.oninput = () => {
       if (total.value === "") delete values[it.name];
       else values[it.name] = parseFloat(total.value);
       saveDraft();
     };
+
     root.appendChild(div);
   });
 }
@@ -150,8 +222,8 @@ function filterItems(q) {
   render(allItems.filter(i => i.name.toLowerCase().includes(q)));
 }
 
-/* 💾 SAVE */
-tg.onEvent("mainButtonClicked", () => {
+/* 💾 СОХРАНЕНИЕ */
+function saveInventory() {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) return tg.showAlert("Введите имя файла");
 
@@ -160,21 +232,20 @@ tg.onEvent("mainButtonClicked", () => {
 
   tg.showConfirm("Сохранить инвентаризацию?", ok => {
     if (!ok) return;
+    tg.sendData(JSON.stringify({ section, filename, items }));
+  });
+}
 
-    tg.sendData(JSON.stringify({
-      section,
-      filename,
-      session_id: sessionId,
-      items
-    }));
-
-    /* 🔥 КРИТИЧНО */
-    sessionStorage.removeItem("inventory_session"); // новая сессия при следующем входе
+/* 🗑 ОЧИСТКА */
+function clearAll() {
+  tg.showConfirm("Вы точно хотите очистить ВСЕ данные?", ok => {
+    if (!ok) return;
     values = {};
     localStorage.removeItem(STORAGE_KEY);
     render(allItems);
   });
-});
+}
 </script>
+
 </body>
 </html>
