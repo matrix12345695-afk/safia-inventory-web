@@ -87,7 +87,7 @@ input.add {
 }
 
 input.total {
-  width: 38px;
+  width: 38px; /* ~1 см */
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -115,6 +115,9 @@ input.total {
 </div>
 
 <script>
+/* ===============================
+   TELEGRAM INIT
+================================ */
 const tg = Telegram.WebApp;
 tg.ready();
 tg.expand();
@@ -123,9 +126,17 @@ tg.disableVerticalSwipes();
 tg.MainButton.setText("💾 Сохранить");
 tg.MainButton.show();
 
+/* ===============================
+   PARAMS & STORAGE
+================================ */
 const params = new URLSearchParams(location.search);
-const section = params.get("section");
+const section = params.get("section") || "default";
 
+const STORAGE_KEY = `inventory_draft_${section}`;
+
+/* ===============================
+   TITLE
+================================ */
 const titles = {
   kitchen: "Кухня",
   bar: "Бар",
@@ -135,16 +146,45 @@ const titles = {
 document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
+/* ===============================
+   DATA
+================================ */
 let allItems = [];
-const values = {};
+const values = {}; // итоговые значения
 
+/* ===============================
+   DRAFT SAVE / LOAD
+================================ */
+function saveDraft() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+}
+
+function loadDraft() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+
+  try {
+    const data = JSON.parse(saved);
+    Object.assign(values, data);
+  } catch (e) {
+    console.warn("Draft corrupted, ignored");
+  }
+}
+
+/* ===============================
+   LOAD ITEMS
+================================ */
 fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(data => {
     allItems = data;
+    loadDraft();          // 🔥 восстанавливаем черновик
     render(allItems);
   });
 
+/* ===============================
+   RENDER
+================================ */
 function render(items) {
   const root = document.getElementById("list");
   root.innerHTML = "";
@@ -169,6 +209,7 @@ function render(items) {
     total.addEventListener("input", () => {
       if (total.value === "") delete values[it.name];
       else values[it.name] = parseFloat(total.value);
+      saveDraft(); // 🔥 автосохранение
     });
 
     plus.addEventListener("click", () => {
@@ -181,18 +222,25 @@ function render(items) {
       total.value = res;
       values[it.name] = res;
       add.value = "";
+
+      saveDraft(); // 🔥 автосохранение
     });
 
     root.appendChild(div);
   });
 }
 
+/* ===============================
+   SEARCH
+================================ */
 function filterItems(text) {
   const q = text.toLowerCase();
   render(allItems.filter(i => i.name.toLowerCase().includes(q)));
 }
 
-/* ✅ КРОСС-ПЛАТФОРМЕННОЕ ПОДТВЕРЖДЕНИЕ */
+/* ===============================
+   SAVE WITH CONFIRM
+================================ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) {
@@ -203,6 +251,7 @@ tg.onEvent("mainButtonClicked", () => {
   const items = Object.entries(values).map(
     ([name, qty]) => ({ name, qty })
   );
+
   if (!items.length) {
     tg.showAlert("Нет данных");
     return;
@@ -220,6 +269,7 @@ tg.onEvent("mainButtonClicked", () => {
       items
     }));
 
+    // ⚠️ НЕ удаляем черновик сразу — на случай сбоя
     setTimeout(() => tg.close(), 600);
   });
 });
