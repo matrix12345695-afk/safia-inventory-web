@@ -87,7 +87,7 @@ input.add {
 }
 
 input.total {
-  width: 38px; /* ~1 см */
+  width: 38px;
   height: 24px;
   padding: 2px;
   border-radius: 5px;
@@ -192,7 +192,7 @@ function filterItems(text) {
   render(allItems.filter(i => i.name.toLowerCase().includes(q)));
 }
 
-/* 👇 ПОДТВЕРЖДЕНИЕ */
+/* ✅ КРОСС-ПЛАТФОРМЕННОЕ ПОДТВЕРЖДЕНИЕ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) {
@@ -203,21 +203,13 @@ tg.onEvent("mainButtonClicked", () => {
   const items = Object.entries(values).map(
     ([name, qty]) => ({ name, qty })
   );
-
   if (!items.length) {
     tg.showAlert("Нет данных");
     return;
   }
 
-  tg.showPopup({
-    title: "Подтверждение",
-    message: "Вы уверены, что хотите сохранить инвентаризацию?",
-    buttons: [
-      { id: "no", type: "cancel", text: "Нет" },
-      { id: "yes", type: "default", text: "Да" }
-    ]
-  }, buttonId => {
-    if (buttonId !== "yes") return;
+  tg.showConfirm("Вы уверены, что хотите сохранить инвентаризацию?", ok => {
+    if (!ok) return;
 
     tg.MainButton.setText("Сохраняю…");
     tg.MainButton.disable();
