@@ -28,7 +28,7 @@
 
     h1 {
       font-size: 20px;
-      margin: 0 0 10px 0;
+      margin-bottom: 10px;
       flex-shrink: 0;
     }
 
@@ -54,18 +54,23 @@
       padding: 10px;
       margin-bottom: 8px;
       display: flex;
-      align-items: center;
-      gap: 8px;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .name {
-      flex: 1;
       font-size: 14px;
     }
 
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .btn-plus {
-      width: 34px;
-      height: 34px;
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
       border: none;
       font-size: 20px;
@@ -79,13 +84,25 @@
       background: #3a3a3a;
     }
 
-    input.qty {
-      width: 80px;
-      padding: 6px;
+    input.add,
+    input.total {
+      flex: 1;
+      padding: 8px;
       border-radius: 6px;
       border: none;
       text-align: center;
       font-size: 14px;
+    }
+
+    input.add {
+      background: #2a2a2a;
+      color: #fff;
+    }
+
+    input.total {
+      background: #fff;
+      color: #000;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -96,9 +113,6 @@
   <h1 id="title">Инвентаризация</h1>
 
   <input id="filename" class="input" placeholder="📝 Имя файла">
-
-  <!-- 🔥 ГЛОБАЛЬНОЕ ПОЛЕ ДОБАВЛЕНИЯ -->
-  <input id="addValue" class="input" type="number" placeholder="➕ Добавить (например: 44)">
 
   <input class="input" placeholder="🔍 Поиск по наименованию"
          oninput="filterItems(this.value)">
@@ -128,7 +142,7 @@ document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
 let allItems = [];
-const values = {};
+const values = {}; // 🧠 итоговые значения
 
 fetch(`./data/${section}.json`)
   .then(r => r.json())
@@ -145,39 +159,40 @@ function render(items) {
     const div = document.createElement("div");
     div.className = "item";
 
-    const val = values[it.name] ?? "";
+    const totalVal = values[it.name] ?? "";
 
     div.innerHTML = `
       <div class="name">${it.name}</div>
-      <button class="btn-plus">+</button>
-      <input class="qty" type="number" step="0.001" value="${val}">
+      <div class="row">
+        <button class="btn-plus">+</button>
+        <input class="add" type="number" placeholder="добавить">
+        <input class="total" type="number" placeholder="итог" value="${totalVal}">
+      </div>
     `;
 
-    const input = div.querySelector("input");
+    const add = div.querySelector(".add");
+    const total = div.querySelector(".total");
     const plus = div.querySelector(".btn-plus");
 
-    input.addEventListener("input", () => {
-      if (input.value === "") {
+    total.addEventListener("input", () => {
+      if (total.value === "") {
         delete values[it.name];
       } else {
-        values[it.name] = parseFloat(input.value);
+        values[it.name] = parseFloat(total.value);
       }
     });
 
     plus.addEventListener("click", () => {
-      const addField = document.getElementById("addValue");
-      const add = parseFloat(addField.value);
+      const addVal = parseFloat(add.value);
+      if (isNaN(addVal)) return;
 
-      if (isNaN(add)) {
-        tg.showAlert("Введите число в поле «Добавить»");
-        return;
-      }
+      const current = parseFloat(total.value) || 0;
+      const result = current + addVal;
 
-      let v = parseFloat(input.value) || 0;
-      v += add;
+      total.value = result;
+      values[it.name] = result;
 
-      input.value = v;
-      values[it.name] = v;
+      add.value = ""; // 🔥 очищаем добавочное поле
     });
 
     root.appendChild(div);
