@@ -115,9 +115,6 @@ input.total {
 </div>
 
 <script>
-/* ===============================
-   TELEGRAM INIT
-================================ */
 const tg = Telegram.WebApp;
 tg.ready();
 tg.expand();
@@ -126,17 +123,12 @@ tg.disableVerticalSwipes();
 tg.MainButton.setText("💾 Сохранить");
 tg.MainButton.show();
 
-/* ===============================
-   PARAMS & STORAGE
-================================ */
 const params = new URLSearchParams(location.search);
 const section = params.get("section") || "default";
+const reset = params.get("reset") === "1";
 
 const STORAGE_KEY = `inventory_draft_${section}`;
 
-/* ===============================
-   TITLE
-================================ */
 const titles = {
   kitchen: "Кухня",
   bar: "Бар",
@@ -146,20 +138,20 @@ const titles = {
 document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
-/* ===============================
-   DATA
-================================ */
 let allItems = [];
-let values = {}; // ⚠️ let, чтобы можно было полностью очистить
+let values = {};
 
-/* ===============================
-   DRAFT SAVE / LOAD
-================================ */
 function saveDraft() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
 }
 
 function loadDraft() {
+  if (reset) {
+    localStorage.removeItem(STORAGE_KEY);
+    values = {};
+    return;
+  }
+
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) return;
 
@@ -170,9 +162,6 @@ function loadDraft() {
   }
 }
 
-/* ===============================
-   LOAD ITEMS
-================================ */
 fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(data => {
@@ -181,9 +170,6 @@ fetch(`./data/${section}.json`)
     render(allItems);
   });
 
-/* ===============================
-   RENDER
-================================ */
 function render(items) {
   const root = document.getElementById("list");
   root.innerHTML = "";
@@ -228,17 +214,11 @@ function render(items) {
   });
 }
 
-/* ===============================
-   SEARCH
-================================ */
 function filterItems(text) {
   const q = text.toLowerCase();
   render(allItems.filter(i => i.name.toLowerCase().includes(q)));
 }
 
-/* ===============================
-   SAVE (FINAL & SAFE)
-================================ */
 tg.onEvent("mainButtonClicked", () => {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) {
@@ -249,17 +229,13 @@ tg.onEvent("mainButtonClicked", () => {
   const items = Object.entries(values).map(
     ([name, qty]) => ({ name, qty })
   );
-
   if (!items.length) {
     tg.showAlert("Нет данных");
     return;
   }
 
-  tg.showConfirm("Вы уверены, что хотите сохранить инвентаризацию?", ok => {
+  tg.showConfirm("Сохранить инвентаризацию?", ok => {
     if (!ok) return;
-
-    tg.MainButton.setText("Сохраняю…");
-    tg.MainButton.disable();
 
     tg.sendData(JSON.stringify({
       section,
@@ -267,12 +243,10 @@ tg.onEvent("mainButtonClicked", () => {
       items
     }));
 
-    /* 🔥 ФИНАЛЬНАЯ ЗАЩИТА */
-    localStorage.removeItem(STORAGE_KEY); // чистим черновик
-    values = {};                          // чистим память
-    render(allItems);                     // чистим UI
-
-    tg.close();
+    // 🔥 iOS SAFE RESET
+    localStorage.removeItem(STORAGE_KEY);
+    values = {};
+    location.replace(location.pathname + "?section=" + section + "&reset=1");
   });
 });
 </script>
