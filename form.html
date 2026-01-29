@@ -20,7 +20,7 @@
       margin-bottom: 10px;
     }
 
-    .search {
+    .input {
       width: 100%;
       padding: 10px;
       border-radius: 10px;
@@ -73,7 +73,14 @@
 
 <input
   type="text"
-  class="search"
+  class="input"
+  id="filename"
+  placeholder="📝 Имя файла (например: Бар_29-01)"
+>
+
+<input
+  type="text"
+  class="input"
   placeholder="🔍 Поиск по наименованию"
   oninput="filterItems(this.value)"
 >
@@ -102,19 +109,15 @@ document.getElementById("title").textContent =
 
 let allItems = [];
 
-// 🔹 Загружаем JSON
+// 🔹 загрузка товаров
 fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(items => {
     allItems = items;
     render(items);
-  })
-  .catch(err => {
-    alert("Ошибка загрузки списка товаров");
-    console.error(err);
   });
 
-// 🔹 Отрисовка списка
+// 🔹 отрисовка
 function render(items) {
   const root = document.getElementById("list");
   root.innerHTML = "";
@@ -135,17 +138,21 @@ function render(items) {
   });
 }
 
-// 🔍 Поиск
+// 🔍 поиск
 function filterItems(text) {
   const q = text.toLowerCase();
-  const filtered = allItems.filter(it =>
-    it.name.toLowerCase().includes(q)
-  );
-  render(filtered);
+  render(allItems.filter(it => it.name.toLowerCase().includes(q)));
 }
 
-// 💾 Сохранение
+// 💾 сохранение
 function save() {
+  const filename = document.getElementById("filename").value.trim();
+
+  if (!filename) {
+    tg.showAlert("Введите имя файла");
+    return;
+  }
+
   const result = [];
   document.querySelectorAll("input.qty").forEach(i => {
     const val = parseFloat(i.value);
@@ -157,8 +164,14 @@ function save() {
     }
   });
 
+  if (result.length === 0) {
+    tg.showAlert("Вы не ввели ни одного количества");
+    return;
+  }
+
   tg.sendData(JSON.stringify({
     section: section,
+    filename: filename,
     items: result
   }));
 }
