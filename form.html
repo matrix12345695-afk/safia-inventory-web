@@ -14,12 +14,10 @@
       color: #fff;
       font-family: system-ui;
     }
-
     h1 {
       font-size: 20px;
       margin-bottom: 10px;
     }
-
     .input {
       width: 100%;
       padding: 10px;
@@ -28,7 +26,6 @@
       margin-bottom: 12px;
       font-size: 14px;
     }
-
     .item {
       background: #1c1c1c;
       border-radius: 10px;
@@ -38,13 +35,11 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .name {
       flex: 1;
       margin-right: 8px;
       font-size: 14px;
     }
-
     input.qty {
       width: 90px;
       padding: 6px;
@@ -78,13 +73,13 @@
 <script>
 const tg = window.Telegram.WebApp;
 
-/* === ОБЯЗАТЕЛЬНАЯ ИНИЦИАЛИЗАЦИЯ === */
+/* === ИНИЦИАЛИЗАЦИЯ === */
 tg.ready();
 tg.expand();
 
-/* === НАСТРОЙКА MAIN BUTTON === */
+/* === MAIN BUTTON === */
 tg.MainButton.setText("💾 Сохранить");
-tg.MainButton.enable();          // 🔴 БЕЗ ЭТОГО НЕ РАБОТАЕТ
+tg.MainButton.enable();
 tg.MainButton.show();
 
 /* === ПАРАМЕТРЫ === */
@@ -103,7 +98,7 @@ document.getElementById("title").textContent =
 
 let allItems = [];
 
-/* === ЗАГРУЗКА JSON === */
+/* === ЗАГРУЗКА ТОВАРОВ === */
 fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(items => {
@@ -134,8 +129,8 @@ function filterItems(text) {
   render(allItems.filter(it => it.name.toLowerCase().includes(q)));
 }
 
-/* === СОХРАНЕНИЕ (КЛЮЧЕВОЙ МОМЕНТ) === */
-tg.MainButton.onClick(() => {
+/* === 💥 САМОЕ ВАЖНОЕ: НИЗКОУРОВНЕВОЕ СОБЫТИЕ === */
+tg.onEvent("mainButtonClicked", () => {
 
   const filename = document.getElementById("filename").value.trim();
   if (!filename) {
@@ -161,6 +156,9 @@ tg.MainButton.onClick(() => {
     filename: filename,
     items: result
   }));
+
+  // ⚠️ ВАЖНО: закрываем WebApp
+  tg.close();
 });
 </script>
 
