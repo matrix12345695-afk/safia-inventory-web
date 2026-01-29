@@ -52,18 +52,6 @@
       border: none;
       text-align: center;
     }
-
-    button {
-      margin-top: 16px;
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: none;
-      font-size: 16px;
-      background: #2ecc71;
-      color: #000;
-      font-weight: 600;
-    }
   </style>
 </head>
 
@@ -75,7 +63,7 @@
   type="text"
   class="input"
   id="filename"
-  placeholder="📝 Имя файла (например: Бар_29-01)"
+  placeholder="📝 Имя файла (например: Бар_№5)"
 >
 
 <input
@@ -87,12 +75,14 @@
 
 <div id="list"></div>
 
-<button onclick="save()">Сохранить</button>
-
 <script>
 const tg = Telegram.WebApp;
 tg.ready();
 tg.expand();
+
+// 🔥 ВАЖНО: используем Telegram MainButton
+tg.MainButton.setText("💾 Сохранить");
+tg.MainButton.show();
 
 const params = new URLSearchParams(window.location.search);
 const section = params.get("section");
@@ -109,7 +99,7 @@ document.getElementById("title").textContent =
 
 let allItems = [];
 
-// 🔹 загрузка товаров
+// загрузка товаров
 fetch(`./data/${section}.json`)
   .then(r => r.json())
   .then(items => {
@@ -117,7 +107,7 @@ fetch(`./data/${section}.json`)
     render(items);
   });
 
-// 🔹 отрисовка
+// отрисовка
 function render(items) {
   const root = document.getElementById("list");
   root.innerHTML = "";
@@ -138,14 +128,14 @@ function render(items) {
   });
 }
 
-// 🔍 поиск
+// поиск
 function filterItems(text) {
   const q = text.toLowerCase();
   render(allItems.filter(it => it.name.toLowerCase().includes(q)));
 }
 
-// 💾 сохранение
-function save() {
+// 🔐 обработчик Telegram MainButton
+tg.MainButton.onClick(() => {
   const filename = document.getElementById("filename").value.trim();
 
   if (!filename) {
@@ -174,7 +164,7 @@ function save() {
     filename: filename,
     items: result
   }));
-}
+});
 </script>
 
 </body>
