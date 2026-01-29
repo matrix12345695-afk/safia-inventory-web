@@ -3,29 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <title>Инвентаризация</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    body {
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
       margin: 0;
-      padding: 16px;
+      padding: 0;
+      height: 100%;
+      overflow: hidden; /* ⛔️ запрещаем скролл страницы */
       background: #0f0f0f;
       color: #fff;
       font-family: system-ui;
     }
+
+    /* 🧱 Корневой контейнер — ФИКСИРОВАН */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh; /* ⬅️ фиксируем высоту */
+      padding: 16px;
+    }
+
     h1 {
       font-size: 20px;
-      margin-bottom: 10px;
+      margin: 0 0 10px 0;
+      flex-shrink: 0;
     }
+
     .input {
       width: 100%;
       padding: 10px;
       border-radius: 10px;
       border: none;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       font-size: 14px;
+      flex-shrink: 0;
     }
+
+    /* 📜 СКРОЛЛ ТОЛЬКО ТУТ */
+    .list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .item {
       background: #1c1c1c;
       border-radius: 10px;
@@ -35,11 +61,13 @@
       justify-content: space-between;
       align-items: center;
     }
+
     .name {
       flex: 1;
       margin-right: 8px;
       font-size: 14px;
     }
+
     input.qty {
       width: 90px;
       padding: 6px;
@@ -52,29 +80,33 @@
 
 <body>
 
-<h1 id="title">Инвентаризация</h1>
+<div class="app">
+  <h1 id="title">Инвентаризация</h1>
 
-<input
-  type="text"
-  class="input"
-  id="filename"
-  placeholder="📝 Имя файла (например: Бар_№5)"
->
+  <input
+    type="text"
+    class="input"
+    id="filename"
+    placeholder="📝 Имя файла"
+  >
 
-<input
-  type="text"
-  class="input"
-  placeholder="🔍 Поиск по наименованию"
-  oninput="filterItems(this.value)"
->
+  <input
+    type="text"
+    class="input"
+    placeholder="🔍 Поиск по наименованию"
+    oninput="filterItems(this.value)"
+  >
 
-<div id="list"></div>
+  <div id="list" class="list"></div>
+</div>
 
 <script>
 const tg = window.Telegram.WebApp;
 
+/* 🚫 ЗАПРЕЩАЕМ Telegram ресайзить экран */
 tg.ready();
 tg.expand();
+tg.disableVerticalSwipes(); // 🔥 ключевая строка
 
 tg.MainButton.setText("💾 Сохранить");
 tg.MainButton.enable();
@@ -100,8 +132,7 @@ fetch(`./data/${section}.json`)
   .then(items => {
     allItems = items;
     render(items);
-  })
-  .catch(() => tg.showAlert("Ошибка загрузки списка"));
+  });
 
 function render(items) {
   const root = document.getElementById("list");
@@ -123,9 +154,8 @@ function filterItems(text) {
   render(allItems.filter(it => it.name.toLowerCase().includes(q)));
 }
 
-/* ✅ ВАЖНО: БЕЗ tg.close() */
+/* сохранение */
 tg.onEvent("mainButtonClicked", () => {
-
   const filename = document.getElementById("filename").value.trim();
   if (!filename) {
     tg.showAlert("Введите имя файла");
@@ -141,7 +171,7 @@ tg.onEvent("mainButtonClicked", () => {
   });
 
   if (result.length === 0) {
-    tg.showAlert("Вы не ввели ни одного количества");
+    tg.showAlert("Нет введённых значений");
     return;
   }
 
@@ -149,8 +179,8 @@ tg.onEvent("mainButtonClicked", () => {
   tg.MainButton.disable();
 
   tg.sendData(JSON.stringify({
-    section: section,
-    filename: filename,
+    section,
+    filename,
     items: result
   }));
 });
