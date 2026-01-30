@@ -44,7 +44,7 @@ h1 {
   overflow-y: auto;
 }
 
-/* 🔽 ГРУППА */
+/* ===== ГРУППЫ ===== */
 .group {
   background: #181818;
   border-radius: 8px;
@@ -62,7 +62,7 @@ h1 {
 }
 
 .group-header span {
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .group-items {
@@ -70,7 +70,11 @@ h1 {
   padding: 6px;
 }
 
-/* 🔽 ТОВАР */
+.group.open .group-items {
+  display: block;
+}
+
+/* ===== ТОВАР ===== */
 .item {
   background: #1c1c1c;
   border-radius: 8px;
@@ -101,14 +105,14 @@ h1 {
 }
 
 input.add {
-  width: 34px;
+  width: 28px;
   height: 22px;
   text-align: center;
   font-size: 11px;
 }
 
 input.total {
-  width: 34px;
+  width: 28px;
   height: 22px;
   text-align: center;
   font-size: 11px;
@@ -117,7 +121,7 @@ input.total {
   font-weight: 600;
 }
 
-/* 🔽 КНОПКИ */
+/* ===== КНОПКИ ===== */
 .footer {
   display: flex;
   gap: 8px;
@@ -169,7 +173,6 @@ tg.disableVerticalSwipes();
 
 const params = new URLSearchParams(location.search);
 const section = params.get("section") || "default";
-
 const STORAGE_KEY = `inventory_draft_${section}`;
 
 const titles = {
@@ -201,44 +204,48 @@ fetch(`./data/${section}.json`)
   .then(json => {
     data = json;
     loadDraft();
-    render(data);
+    render(data, "");
   });
 
-document.getElementById("search").oninput = e => {
-  const q = e.target.value.toLowerCase();
-  if (!q) return render(data);
+/* 🔍 ПОИСК С АВТО-РАСКРЫТИЕМ ГРУПП */
+document.getElementById("search").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  render(data, q);
+});
 
-  const filtered = data.map(g => ({
-    group: g.group,
-    items: g.items.filter(i => i.name.toLowerCase().includes(q))
-  })).filter(g => g.items.length);
-
-  render(filtered);
-};
-
-function render(groups) {
+function render(groups, query) {
   const root = document.getElementById("list");
   root.innerHTML = "";
 
   groups.forEach(g => {
+    const matchedItems = query
+      ? g.items.filter(i => i.name.toLowerCase().includes(query))
+      : g.items;
+
+    if (query && matchedItems.length === 0) return;
+
     const gDiv = document.createElement("div");
     gDiv.className = "group";
 
+    if (query) gDiv.classList.add("open");
+
     const header = document.createElement("div");
     header.className = "group-header";
-    header.innerHTML = `${g.group} <span>▼</span>`;
+    header.innerHTML = `${g.group} <span>${gDiv.classList.contains("open") ? "▲" : "▼"}</span>`;
 
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "group-items";
 
     header.onclick = () => {
-      itemsDiv.style.display =
-        itemsDiv.style.display === "block" ? "none" : "block";
+      gDiv.classList.toggle("open");
+      header.querySelector("span").textContent =
+        gDiv.classList.contains("open") ? "▲" : "▼";
     };
 
-    g.items.forEach(it => {
+    matchedItems.forEach(it => {
       const key = it.article;
-      const val = values[key] ?? "";
+      const stored = values[key];
+      const val = stored ? stored.qty : "";
 
       const row = document.createElement("div");
       row.className = "item";
@@ -256,20 +263,23 @@ function render(groups) {
         const a = parseFloat(add.value);
         if (isNaN(a)) return;
         const cur = parseFloat(total.value) || 0;
-        total.value = cur + a;
+        const next = cur + a;
+        total.value = next;
+
         values[key] = {
           article: it.article,
           name: it.name,
           group: g.group,
-          qty: cur + a
+          qty: next
         };
         add.value = "";
         saveDraft();
       };
 
       total.oninput = () => {
-        if (total.value === "") delete values[key];
-        else {
+        if (total.value === "") {
+          delete values[key];
+        } else {
           values[key] = {
             article: it.article,
             name: it.name,
@@ -307,7 +317,7 @@ function clearAll() {
     if (!ok) return;
     values = {};
     localStorage.removeItem(STORAGE_KEY);
-    render(data);
+    render(data, "");
   });
 }
 </script>
