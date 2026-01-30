@@ -44,6 +44,33 @@ h1 {
   overflow-y: auto;
 }
 
+/* 🔽 ГРУППА */
+.group {
+  background: #181818;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.group-header {
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.group-header span {
+  opacity: 0.7;
+}
+
+.group-items {
+  display: none;
+  padding: 6px;
+}
+
+/* 🔽 ТОВАР */
 .item {
   background: #1c1c1c;
   border-radius: 8px;
@@ -63,34 +90,34 @@ h1 {
 }
 
 .btn-plus {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 5px;
   border: none;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   background: #2e2e2e;
   color: #fff;
 }
 
 input.add {
-  width: 40px;
-  height: 24px;
+  width: 34px;
+  height: 22px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 input.total {
-  width: 38px;
-  height: 24px;
+  width: 34px;
+  height: 22px;
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   background: #fff;
   color: #000;
   font-weight: 600;
 }
 
-/* 🔽 КНОПКИ ВНИЗУ */
+/* 🔽 КНОПКИ */
 .footer {
   display: flex;
   gap: 8px;
@@ -124,16 +151,13 @@ input.total {
   <h1 id="title">Инвентаризация</h1>
 
   <input id="filename" class="input" placeholder="Имя файла">
-
-  <input class="input" placeholder="Поиск"
-         oninput="filterItems(this.value)">
+  <input id="search" class="input" placeholder="Поиск">
 
   <div id="list" class="list"></div>
 
-  <!-- 🔽 НИЖНИЕ КНОПКИ -->
   <div class="footer">
     <button class="save-btn" onclick="saveInventory()">💾 Сохранить</button>
-    <button class="clear-btn" onclick="clearAll()">🗑 Очистить всё</button>
+    <button class="clear-btn" onclick="clearAll()">🗑 Очистить</button>
   </div>
 </div>
 
@@ -157,7 +181,7 @@ const titles = {
 document.getElementById("title").textContent =
   titles[section] || "Инвентаризация";
 
-let allItems = [];
+let data = [];
 let values = {};
 
 function saveDraft() {
@@ -165,69 +189,111 @@ function saveDraft() {
 }
 
 function loadDraft() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (!saved) return;
-  try { values = JSON.parse(saved) || {}; }
-  catch { values = {}; }
+  try {
+    values = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch {
+    values = {};
+  }
 }
 
 fetch(`./data/${section}.json`)
   .then(r => r.json())
-  .then(data => {
-    allItems = data;
+  .then(json => {
+    data = json;
     loadDraft();
-    render(allItems);
+    render(data);
   });
 
-function render(items) {
+document.getElementById("search").oninput = e => {
+  const q = e.target.value.toLowerCase();
+  if (!q) return render(data);
+
+  const filtered = data.map(g => ({
+    group: g.group,
+    items: g.items.filter(i => i.name.toLowerCase().includes(q))
+  })).filter(g => g.items.length);
+
+  render(filtered);
+};
+
+function render(groups) {
   const root = document.getElementById("list");
   root.innerHTML = "";
 
-  items.forEach(it => {
-    const val = values[it.name] ?? "";
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <div class="name">${it.name}</div>
-      <button class="btn-plus">+</button>
-      <input class="add" type="number">
-      <input class="total" type="number" value="${val}">
-    `;
+  groups.forEach(g => {
+    const gDiv = document.createElement("div");
+    gDiv.className = "group";
 
-    const add = div.querySelector(".add");
-    const total = div.querySelector(".total");
+    const header = document.createElement("div");
+    header.className = "group-header";
+    header.innerHTML = `${g.group} <span>▼</span>`;
 
-    div.querySelector(".btn-plus").onclick = () => {
-      const a = parseFloat(add.value);
-      if (isNaN(a)) return;
-      const cur = parseFloat(total.value) || 0;
-      total.value = cur + a;
-      values[it.name] = cur + a;
-      add.value = "";
-      saveDraft();
+    const itemsDiv = document.createElement("div");
+    itemsDiv.className = "group-items";
+
+    header.onclick = () => {
+      itemsDiv.style.display =
+        itemsDiv.style.display === "block" ? "none" : "block";
     };
 
-    total.oninput = () => {
-      if (total.value === "") delete values[it.name];
-      else values[it.name] = parseFloat(total.value);
-      saveDraft();
-    };
+    g.items.forEach(it => {
+      const key = it.article;
+      const val = values[key] ?? "";
 
-    root.appendChild(div);
+      const row = document.createElement("div");
+      row.className = "item";
+      row.innerHTML = `
+        <div class="name">${it.name}</div>
+        <button class="btn-plus">+</button>
+        <input class="add" type="number">
+        <input class="total" type="number" value="${val}">
+      `;
+
+      const add = row.querySelector(".add");
+      const total = row.querySelector(".total");
+
+      row.querySelector(".btn-plus").onclick = () => {
+        const a = parseFloat(add.value);
+        if (isNaN(a)) return;
+        const cur = parseFloat(total.value) || 0;
+        total.value = cur + a;
+        values[key] = {
+          article: it.article,
+          name: it.name,
+          group: g.group,
+          qty: cur + a
+        };
+        add.value = "";
+        saveDraft();
+      };
+
+      total.oninput = () => {
+        if (total.value === "") delete values[key];
+        else {
+          values[key] = {
+            article: it.article,
+            name: it.name,
+            group: g.group,
+            qty: parseFloat(total.value)
+          };
+        }
+        saveDraft();
+      };
+
+      itemsDiv.appendChild(row);
+    });
+
+    gDiv.appendChild(header);
+    gDiv.appendChild(itemsDiv);
+    root.appendChild(gDiv);
   });
 }
 
-function filterItems(q) {
-  q = q.toLowerCase();
-  render(allItems.filter(i => i.name.toLowerCase().includes(q)));
-}
-
-/* 💾 СОХРАНЕНИЕ */
 function saveInventory() {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) return tg.showAlert("Введите имя файла");
 
-  const items = Object.entries(values).map(([name, qty]) => ({ name, qty }));
+  const items = Object.values(values);
   if (!items.length) return tg.showAlert("Нет данных");
 
   tg.showConfirm("Сохранить инвентаризацию?", ok => {
@@ -236,13 +302,12 @@ function saveInventory() {
   });
 }
 
-/* 🗑 ОЧИСТКА */
 function clearAll() {
-  tg.showConfirm("Вы точно хотите очистить ВСЕ данные?", ok => {
+  tg.showConfirm("Очистить все данные?", ok => {
     if (!ok) return;
     values = {};
     localStorage.removeItem(STORAGE_KEY);
-    render(allItems);
+    render(data);
   });
 }
 </script>
