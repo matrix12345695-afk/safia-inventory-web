@@ -171,18 +171,27 @@ tg.ready();
 tg.expand();
 tg.disableVerticalSwipes();
 
+/* ===== РАЗРЕШЁННЫЕ РАЗДЕЛЫ ===== */
+const SECTIONS = ["shop", "kitchen", "bar", "freezer"];
+
+/* ===== ПОЛУЧЕНИЕ SECTION С FALLBACK ===== */
 const params = new URLSearchParams(location.search);
-const section = params.get("section") || "default";
+let section = params.get("section");
+
+if (!SECTIONS.includes(section)) {
+  section = "shop"; // fallback по умолчанию
+}
+
 const STORAGE_KEY = `inventory_draft_${section}`;
 
 const titles = {
+  shop: "Магазин",
   kitchen: "Кухня",
   bar: "Бар",
-  shop: "Магазин",
   freezer: "Морозилка"
 };
-document.getElementById("title").textContent =
-  titles[section] || "Инвентаризация";
+
+document.getElementById("title").textContent = titles[section];
 
 let data = [];
 let values = {};
@@ -199,15 +208,24 @@ function loadDraft() {
   }
 }
 
+/* ===== ЗАГРУЗКА ДАННЫХ ===== */
 fetch(`./data/${section}.json`)
-  .then(r => r.json())
+  .then(r => {
+    if (!r.ok) throw new Error(`Файл ${section}.json не найден`);
+    return r.json();
+  })
   .then(json => {
     data = json;
     loadDraft();
     render(data, "");
+  })
+  .catch(err => {
+    document.getElementById("list").innerHTML =
+      `<div style="color:#ff6b6b;padding:10px;font-size:13px">${err.message}</div>`;
+    console.error(err);
   });
 
-/* 🔍 ПОИСК С АВТО-РАСКРЫТИЕМ ГРУПП */
+/* ===== ПОИСК ===== */
 document.getElementById("search").addEventListener("input", e => {
   const q = e.target.value.trim().toLowerCase();
   render(data, q);
@@ -226,7 +244,6 @@ function render(groups, query) {
 
     const gDiv = document.createElement("div");
     gDiv.className = "group";
-
     if (query) gDiv.classList.add("open");
 
     const header = document.createElement("div");
@@ -266,12 +283,7 @@ function render(groups, query) {
         const next = cur + a;
         total.value = next;
 
-        values[key] = {
-          article: it.article,
-          name: it.name,
-          group: g.group,
-          qty: next
-        };
+        values[key] = { article: it.article, name: it.name, group: g.group, qty: next };
         add.value = "";
         saveDraft();
       };
@@ -280,12 +292,7 @@ function render(groups, query) {
         if (total.value === "") {
           delete values[key];
         } else {
-          values[key] = {
-            article: it.article,
-            name: it.name,
-            group: g.group,
-            qty: parseFloat(total.value)
-          };
+          values[key] = { article: it.article, name: it.name, group: g.group, qty: parseFloat(total.value) };
         }
         saveDraft();
       };
@@ -307,8 +314,7 @@ function saveInventory() {
   if (!items.length) return tg.showAlert("Нет данных");
 
   tg.showConfirm("Сохранить инвентаризацию?", ok => {
-    if (!ok) return;
-    tg.sendData(JSON.stringify({ section, filename, items }));
+    if (ok) tg.sendData(JSON.stringify({ section, filename, items }));
   });
 }
 
