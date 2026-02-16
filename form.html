@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <title>Инвентаризация</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1,
+maximum-scale=1,
+minimum-scale=1,
+user-scalable=no">
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -16,34 +23,39 @@ html,body{
   background:#0f0f0f;
   color:#fff;
   font-family:system-ui;
+  overflow:hidden; /* убираем лишние скроллы */
 }
 
 .app{
   display:flex;
   flex-direction:column;
-  min-height:100vh; /* вместо жесткого 100vh */
+  height:100%;
   padding:10px;
 }
 
-h1{font-size:17px;margin:0 0 6px}
+h1{
+  font-size:17px;
+  margin:0 0 6px;
+}
 
 .input{
   width:100%;
   padding:8px;
   border-radius:8px;
   border:none;
-  margin-bottom:8px
+  margin-bottom:8px;
 }
 
 .list{
   flex:1;
   overflow-y:auto;
+  padding-bottom:80px; /* чтобы контент не залезал под кнопки */
 }
 
 .group{
   background:#181818;
   border-radius:10px;
-  margin-bottom:8px
+  margin-bottom:8px;
 }
 
 .group-header{
@@ -51,11 +63,17 @@ h1{font-size:17px;margin:0 0 6px}
   font-weight:600;
   display:flex;
   justify-content:space-between;
-  cursor:pointer
+  cursor:pointer;
 }
 
-.group-items{display:none;padding:8px}
-.group.open .group-items{display:block}
+.group-items{
+  display:none;
+  padding:8px;
+}
+
+.group.open .group-items{
+  display:block;
+}
 
 .item{
   background:#1c1c1c;
@@ -64,14 +82,14 @@ h1{font-size:17px;margin:0 0 6px}
   margin-bottom:6px;
   display:flex;
   gap:6px;
-  align-items:center
+  align-items:center;
 }
 
 .name{
   flex:1;
   white-space:nowrap;
   overflow:hidden;
-  text-overflow:ellipsis
+  text-overflow:ellipsis;
 }
 
 .btn-plus{
@@ -80,14 +98,14 @@ h1{font-size:17px;margin:0 0 6px}
   border:none;
   border-radius:8px;
   background:#2e2e2e;
-  color:#fff
+  color:#fff;
 }
 
 input.add{
   width:50px;
   height:30px;
   text-align:center;
-  border-radius:8px
+  border-radius:8px;
 }
 
 input.total{
@@ -97,13 +115,20 @@ input.total{
   border-radius:8px;
   background:#fff;
   color:#000;
-  font-weight:600
+  font-weight:600;
 }
 
+/* 🔥 фиксируем кнопки снизу */
 .footer{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
   display:flex;
   gap:8px;
-  margin-top:8px
+  padding:10px;
+  background:#0f0f0f;
+  border-top:1px solid #222;
 }
 
 .footer button{
@@ -111,11 +136,18 @@ input.total{
   padding:12px;
   border:none;
   border-radius:10px;
-  font-weight:600
+  font-weight:600;
 }
 
-.save-btn{background:#2ea043;color:#fff}
-.clear-btn{background:#a02e2e;color:#fff}
+.save-btn{
+  background:#2ea043;
+  color:#fff;
+}
+
+.clear-btn{
+  background:#a02e2e;
+  color:#fff;
+}
 </style>
 </head>
 
@@ -125,17 +157,18 @@ input.total{
   <input id="filename" class="input" placeholder="Имя файла">
   <input id="search" class="input" placeholder="Поиск">
   <div id="list" class="list"></div>
-  <div class="footer">
-    <button class="save-btn" onclick="saveInventory()">💾 Сохранить</button>
-    <button class="clear-btn" onclick="clearAll()">🗑 Очистить</button>
-  </div>
+</div>
+
+<div class="footer">
+  <button class="save-btn" onclick="saveInventory()">💾 Сохранить</button>
+  <button class="clear-btn" onclick="clearAll()">🗑 Очистить</button>
 </div>
 
 <script>
 const tg = Telegram.WebApp;
 tg.ready();
-tg.disableVerticalSwipes(); // убираем дёргания
-// tg.expand();  ← убрали чтобы не прыгала высота
+tg.disableVerticalSwipes(); // убираем свайпы
+// tg.expand(); отключили чтобы не дёргалось
 
 const SECTIONS=["shop","kitchen","bar","freezer"];
 const params=new URLSearchParams(location.search);
@@ -149,10 +182,15 @@ document.getElementById("title").textContent=titles[section];
 let data=[];
 let values={};
 
-function saveDraft(){localStorage.setItem(STORAGE_KEY,JSON.stringify(values))}
-function loadDraft(){values=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}
+function saveDraft(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(values));
+}
 
-fetch(`./data/${section}.json?v=31`)
+function loadDraft(){
+  values=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+}
+
+fetch(`./data/${section}.json?v=30`)
 .then(r=>r.json())
 .then(json=>{
   data=json;
@@ -167,6 +205,7 @@ document.getElementById("search").addEventListener("input",e=>{
 function render(groups,query){
   const root=document.getElementById("list");
   root.innerHTML="";
+
   groups.forEach(g=>{
     const items=query?g.items.filter(i=>i.name.toLowerCase().includes(query)):g.items;
     if(query&&items.length===0)return;
@@ -185,6 +224,7 @@ function render(groups,query){
     items.forEach(it=>{
       const key=it.article+"|"+g.group;
       const val=values[key]?.qty||"";
+
       const row=document.createElement("div");
       row.className="item";
       row.innerHTML=`
@@ -193,6 +233,7 @@ function render(groups,query){
         <input class="add" type="number">
         <input class="total" type="number" value="${val}">
       `;
+
       const add=row.querySelector(".add");
       const total=row.querySelector(".total");
 
