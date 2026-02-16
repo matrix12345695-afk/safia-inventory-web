@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -24,10 +25,7 @@ html, body {
   padding: 10px;
 }
 
-h1 {
-  font-size: 17px;
-  margin-bottom: 6px;
-}
+h1 { font-size: 17px; margin-bottom: 6px; }
 
 .input {
   width: 100%;
@@ -38,12 +36,8 @@ h1 {
   font-size: 13px;
 }
 
-.list {
-  flex: 1;
-  overflow-y: auto;
-}
+.list { flex: 1; overflow-y: auto; }
 
-/* ===== ГРУППЫ ===== */
 .group {
   background: #181818;
   border-radius: 10px;
@@ -60,20 +54,12 @@ h1 {
   cursor: pointer;
 }
 
-.group-header span {
-  opacity: 0.6;
-}
+.group-header span { opacity: 0.6; }
 
-.group-items {
-  display: none;
-  padding: 8px;
-}
+.group-items { display: none; padding: 8px; }
 
-.group.open .group-items {
-  display: block;
-}
+.group.open .group-items { display: block; }
 
-/* ===== ТОВАР ===== */
 .item {
   background: #1c1c1c;
   border-radius: 10px;
@@ -93,7 +79,6 @@ h1 {
   text-overflow: ellipsis;
 }
 
-/* КНОПКА + */
 .btn-plus {
   width: 30px;
   height: 30px;
@@ -105,7 +90,6 @@ h1 {
   color: #fff;
 }
 
-/* ПОЛЕ ДОБАВЛЕНИЯ */
 input.add {
   width: 50px;
   height: 30px;
@@ -114,7 +98,6 @@ input.add {
   border-radius: 8px;
 }
 
-/* ПОЛЕ ИТОГА */
 input.total {
   width: 65px;
   height: 30px;
@@ -126,7 +109,6 @@ input.total {
   border-radius: 8px;
 }
 
-/* ===== КНОПКИ ===== */
 .footer {
   display: flex;
   gap: 8px;
@@ -142,15 +124,8 @@ input.total {
   font-weight: 600;
 }
 
-.save-btn {
-  background: #2ea043;
-  color: #fff;
-}
-
-.clear-btn {
-  background: #a02e2e;
-  color: #fff;
-}
+.save-btn { background: #2ea043; color: #fff; }
+.clear-btn { background: #a02e2e; color: #fff; }
 </style>
 </head>
 
@@ -158,10 +133,8 @@ input.total {
 
 <div class="app">
   <h1 id="title">Инвентаризация</h1>
-
   <input id="filename" class="input" placeholder="Имя файла">
   <input id="search" class="input" placeholder="Поиск">
-
   <div id="list" class="list"></div>
 
   <div class="footer">
@@ -179,10 +152,7 @@ tg.disableVerticalSwipes();
 const SECTIONS = ["shop", "kitchen", "bar", "freezer"];
 const params = new URLSearchParams(location.search);
 let section = params.get("section");
-
-if (!SECTIONS.includes(section)) {
-  section = "shop";
-}
+if (!SECTIONS.includes(section)) section = "shop";
 
 const STORAGE_KEY = `inventory_draft_${section}`;
 
@@ -211,24 +181,15 @@ function loadDraft() {
 }
 
 fetch(`./data/${section}.json`)
-  .then(r => {
-    if (!r.ok) throw new Error(`Файл ${section}.json не найден`);
-    return r.json();
-  })
+  .then(r => r.json())
   .then(json => {
     data = json;
     loadDraft();
     render(data, "");
-  })
-  .catch(err => {
-    document.getElementById("list").innerHTML =
-      `<div style="color:#ff6b6b;padding:10px;font-size:13px">${err.message}</div>`;
-    console.error(err);
   });
 
 document.getElementById("search").addEventListener("input", e => {
-  const q = e.target.value.trim().toLowerCase();
-  render(data, q);
+  render(data, e.target.value.trim().toLowerCase());
 });
 
 function render(groups, query) {
@@ -236,11 +197,11 @@ function render(groups, query) {
   root.innerHTML = "";
 
   groups.forEach(g => {
-    const matchedItems = query
+    const items = query
       ? g.items.filter(i => i.name.toLowerCase().includes(query))
       : g.items;
 
-    if (query && matchedItems.length === 0) return;
+    if (query && items.length === 0) return;
 
     const gDiv = document.createElement("div");
     gDiv.className = "group";
@@ -248,7 +209,7 @@ function render(groups, query) {
 
     const header = document.createElement("div");
     header.className = "group-header";
-    header.innerHTML = `${g.group} <span>${gDiv.classList.contains("open") ? "▲" : "▼"}</span>`;
+    header.innerHTML = `${g.group} <span>▼</span>`;
 
     const itemsDiv = document.createElement("div");
     itemsDiv.className = "group-items";
@@ -259,10 +220,9 @@ function render(groups, query) {
         gDiv.classList.contains("open") ? "▲" : "▼";
     };
 
-    matchedItems.forEach(it => {
+    items.forEach(it => {
       const key = it.article;
-      const stored = values[key];
-      const val = stored ? stored.qty : "";
+      const val = values[key]?.qty || "";
 
       const row = document.createElement("div");
       row.className = "item";
@@ -279,21 +239,16 @@ function render(groups, query) {
       row.querySelector(".btn-plus").onclick = () => {
         const a = parseFloat(add.value);
         if (isNaN(a)) return;
-        const cur = parseFloat(total.value) || 0;
-        const next = cur + a;
+        const next = (parseFloat(total.value) || 0) + a;
         total.value = next;
-
-        values[key] = { article: it.article, name: it.name, group: g.group, qty: next };
+        values[key] = { article: it.article, qty: next };
         add.value = "";
         saveDraft();
       };
 
       total.oninput = () => {
-        if (total.value === "") {
-          delete values[key];
-        } else {
-          values[key] = { article: it.article, name: it.name, group: g.group, qty: parseFloat(total.value) };
-        }
+        if (!total.value) delete values[key];
+        else values[key] = { article: it.article, qty: parseFloat(total.value) };
         saveDraft();
       };
 
@@ -310,11 +265,25 @@ function saveInventory() {
   const filename = document.getElementById("filename").value.trim();
   if (!filename) return tg.showAlert("Введите имя файла");
 
-  const items = Object.values(values);
-  if (!items.length) return tg.showAlert("Нет данных");
+  const compactItems = Object.values(values).map(v => ({
+    article: v.article,
+    qty: v.qty
+  }));
+
+  if (!compactItems.length) return tg.showAlert("Нет данных");
+
+  const payload = JSON.stringify({
+    section,
+    filename,
+    items: compactItems
+  });
+
+  if (payload.length > 50000) {
+    return tg.showAlert("Слишком много данных. Разделите инвентаризацию.");
+  }
 
   tg.showConfirm("Сохранить инвентаризацию?", ok => {
-    if (ok) tg.sendData(JSON.stringify({ section, filename, items }));
+    if (ok) tg.sendData(payload);
   });
 }
 
@@ -329,3 +298,4 @@ function clearAll() {
 </script>
 
 </body>
+</html>
