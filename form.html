@@ -1,124 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Инвентаризация</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0f0f0f;color:#fff;font-family:system-ui}
+.app{display:flex;flex-direction:column;height:100vh;padding:10px}
+h1{font-size:17px;margin:0 0 6px}
+.input{width:100%;padding:8px;border-radius:8px;border:none;margin-bottom:8px}
+.list{flex:1;overflow-y:auto}
+.group{background:#181818;border-radius:10px;margin-bottom:8px}
+.group-header{padding:10px;font-weight:600;display:flex;justify-content:space-between;cursor:pointer}
+.group-items{display:none;padding:8px}
+.group.open .group-items{display:block}
+.item{background:#1c1c1c;border-radius:10px;padding:8px;margin-bottom:6px;display:flex;gap:6px;align-items:center}
+.name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-plus{width:30px;height:30px;border:none;border-radius:8px;background:#2e2e2e;color:#fff}
+input.add{width:50px;height:30px;text-align:center;border-radius:8px}
+input.total{width:65px;height:30px;text-align:center;border-radius:8px;background:#fff;color:#000;font-weight:600}
+.footer{display:flex;gap:8px;margin-top:8px}
+.footer button{flex:1;padding:12px;border:none;border-radius:10px;font-weight:600}
+.save-btn{background:#2ea043;color:#fff}
+.clear-btn{background:#a02e2e;color:#fff}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1 id="title">Инвентаризация</h1>
+  <input id="filename" class="input" placeholder="Имя файла">
+  <input id="search" class="input" placeholder="Поиск">
+  <div id="list" class="list"></div>
+  <div class="footer">
+    <button class="save-btn" onclick="saveInventory()">💾 Сохранить</button>
+    <button class="clear-btn" onclick="clearAll()">🗑 Очистить</button>
+  </div>
+</div>
+
 <script>
 const tg = Telegram.WebApp;
 tg.ready();
 tg.expand();
-tg.disableVerticalSwipes();
 
-const SECTIONS = ["shop", "kitchen", "bar", "freezer"];
-const params = new URLSearchParams(location.search);
-let section = params.get("section");
-if (!SECTIONS.includes(section)) section = "shop";
+const SECTIONS=["shop","kitchen","bar","freezer"];
+const params=new URLSearchParams(location.search);
+let section=params.get("section");
+if(!SECTIONS.includes(section)) section="shop";
 
-const STORAGE_KEY = `inventory_draft_${section}`;
+const STORAGE_KEY=`inventory_${section}`;
+const titles={shop:"Магазин",kitchen:"Кухня",bar:"Бар",freezer:"Морозилка"};
+document.getElementById("title").textContent=titles[section];
 
-const titles = {
-  shop: "Магазин",
-  kitchen: "Кухня",
-  bar: "Бар",
-  freezer: "Морозилка"
-};
+let data=[];
+let values={};
 
-document.getElementById("title").textContent = titles[section];
+function saveDraft(){localStorage.setItem(STORAGE_KEY,JSON.stringify(values))}
+function loadDraft(){values=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")}
 
-let data = [];
-let values = {};
-
-function saveDraft() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
-}
-
-function loadDraft() {
-  try {
-    values = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch {
-    values = {};
-  }
-}
-
-fetch(`./data/${section}.json`)
-  .then(r => r.json())
-  .then(json => {
-    data = json;
-    loadDraft();
-    render(data, "");
-  });
-
-document.getElementById("search").addEventListener("input", e => {
-  render(data, e.target.value.trim().toLowerCase());
+fetch(`./data/${section}.json?v=30`)
+.then(r=>r.json())
+.then(json=>{
+  data=json;
+  loadDraft();
+  render(data,"");
 });
 
-function render(groups, query) {
-  const root = document.getElementById("list");
-  root.innerHTML = "";
+document.getElementById("search").addEventListener("input",e=>{
+  render(data,e.target.value.toLowerCase());
+});
 
-  groups.forEach(g => {
-    const items = query
-      ? g.items.filter(i => i.name.toLowerCase().includes(query))
-      : g.items;
+function render(groups,query){
+  const root=document.getElementById("list");
+  root.innerHTML="";
+  groups.forEach(g=>{
+    const items=query?g.items.filter(i=>i.name.toLowerCase().includes(query)):g.items;
+    if(query&&items.length===0)return;
 
-    if (query && items.length === 0) return;
+    const gDiv=document.createElement("div");
+    gDiv.className="group";
 
-    const gDiv = document.createElement("div");
-    gDiv.className = "group";
-    if (query) gDiv.classList.add("open");
+    const header=document.createElement("div");
+    header.className="group-header";
+    header.innerHTML=`${g.group}<span>▼</span>`;
+    header.onclick=()=>gDiv.classList.toggle("open");
 
-    const header = document.createElement("div");
-    header.className = "group-header";
-    header.innerHTML = `${g.group} <span>▼</span>`;
+    const itemsDiv=document.createElement("div");
+    itemsDiv.className="group-items";
 
-    const itemsDiv = document.createElement("div");
-    itemsDiv.className = "group-items";
-
-    header.onclick = () => {
-      gDiv.classList.toggle("open");
-      header.querySelector("span").textContent =
-        gDiv.classList.contains("open") ? "▲" : "▼";
-    };
-
-    items.forEach(it => {
-      const key = it.article + "|" + g.group; // ВАЖНО
-
-      const val = values[key]?.qty || "";
-
-      const row = document.createElement("div");
-      row.className = "item";
-      row.innerHTML = `
+    items.forEach(it=>{
+      const key=it.article+"|"+g.group;
+      const val=values[key]?.qty||"";
+      const row=document.createElement("div");
+      row.className="item";
+      row.innerHTML=`
         <div class="name">${it.name}</div>
         <button class="btn-plus">+</button>
         <input class="add" type="number">
         <input class="total" type="number" value="${val}">
       `;
+      const add=row.querySelector(".add");
+      const total=row.querySelector(".total");
 
-      const add = row.querySelector(".add");
-      const total = row.querySelector(".total");
-
-      row.querySelector(".btn-plus").onclick = () => {
-        const a = parseFloat(add.value);
-        if (isNaN(a)) return;
-
-        const next = (parseFloat(total.value) || 0) + a;
-        total.value = next;
-
-        values[key] = {
-          article: it.article,
-          group: g.group,
-          qty: next
-        };
-
-        add.value = "";
+      row.querySelector(".btn-plus").onclick=()=>{
+        const a=parseFloat(add.value);
+        if(isNaN(a))return;
+        const next=(parseFloat(total.value)||0)+a;
+        total.value=next;
+        values[key]={article:it.article,group:g.group,qty:next};
+        add.value="";
         saveDraft();
       };
 
-      total.oninput = () => {
-        if (!total.value) {
-          delete values[key];
-        } else {
-          values[key] = {
-            article: it.article,
-            group: g.group,
-            qty: parseFloat(total.value)
-          };
-        }
+      total.oninput=()=>{
+        if(!total.value) delete values[key];
+        else values[key]={article:it.article,group:g.group,qty:parseFloat(total.value)};
         saveDraft();
       };
 
@@ -131,39 +130,41 @@ function render(groups, query) {
   });
 }
 
-function saveInventory() {
-  const filename = document.getElementById("filename").value.trim();
-  if (!filename) return tg.showAlert("Введите имя файла");
+function saveInventory(){
+  const filename=document.getElementById("filename").value.trim();
+  if(!filename)return tg.showAlert("Введите имя файла");
 
-  const compactItems = Object.values(values).map(v => ({
-    article: v.article,
-    group: v.group,
-    qty: v.qty
+  const items=Object.values(values).map(v=>({
+    article:v.article,
+    group:v.group,
+    qty:v.qty
   }));
 
-  if (!compactItems.length) return tg.showAlert("Нет данных");
+  if(!items.length)return tg.showAlert("Нет данных");
 
-  const payload = JSON.stringify({
-    section,
-    filename,
-    items: compactItems
-  });
+  const base={section,filename};
+  const payload=JSON.stringify({...base,items});
 
-  if (payload.length > 60000) {
-    return tg.showAlert("Слишком много данных. Разделите инвентаризацию.");
+  if(payload.length<58000){
+    tg.sendData(payload);
+    return;
   }
 
-  tg.showConfirm("Сохранить инвентаризацию?", ok => {
-    if (ok) tg.sendData(payload);
-  });
+  const half=Math.ceil(items.length/2);
+  const part1=items.slice(0,half);
+  const part2=items.slice(half);
+
+  tg.sendData(JSON.stringify({...base,items:part1,part:1}));
+  setTimeout(()=>{
+    tg.sendData(JSON.stringify({...base,items:part2,part:2}));
+  },600);
 }
 
-function clearAll() {
-  tg.showConfirm("Очистить все данные?", ok => {
-    if (!ok) return;
-    values = {};
-    localStorage.removeItem(STORAGE_KEY);
-    render(data, "");
-  });
+function clearAll(){
+  values={};
+  localStorage.removeItem(STORAGE_KEY);
+  render(data,"");
 }
 </script>
+</body>
+</html>
