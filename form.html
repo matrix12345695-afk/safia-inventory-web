@@ -133,6 +133,7 @@ function render(groups,query){
 }
 
 function saveInventory(){
+  tg.showAlert("Начали сохранение");
   const filename=document.getElementById("filename").value.trim();
   if(!filename)return tg.showAlert("Введите имя файла");
 
